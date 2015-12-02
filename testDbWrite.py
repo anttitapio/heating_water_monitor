@@ -5,7 +5,9 @@ from subprocess import call
 
 correctionLevel = 7.0 # align to analog meter
 alarmingLevel = 68.0
+
 errorCount = 0
+
 #check the serial number of the attached sensor
 call(["touch", "/home/pi/devicenames.txt"])
 deviceNamesFile = open("/home/pi/devicenames.txt", "w")
@@ -44,8 +46,7 @@ while 1:
         tempOutput = open("/home/pi/alarmingTemp.txt", 'w')
         print 'Alarming level'
         tempOutput.write(str("%3.2f" %temperature))
-
-
+        call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
 
     url = 'http://multime.ga/temp/set.php?json='
 
