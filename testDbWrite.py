@@ -5,6 +5,8 @@ from subprocess import call
 
 correctionLevel = 7.0 # align to analog meter
 alarmingLevel = 68.0
+measurementInterval = 60*5 #seconds
+url = 'http://tempread.netai.net/temp/set.php?json='
 
 errorCount = 0
 
@@ -48,7 +50,6 @@ while 1:
         tempOutput.write(str("%3.2f" %temperature))
         call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
 
-    url = 'http://multime.ga/temp/set.php?json='
 
     date = time.strftime("%Y-%m-%d")
     hours = time.strftime("%H")
@@ -64,6 +65,6 @@ while 1:
         errorCount = errorCount + 1
         print "Server error while connecting. Happened %d times since service start." % errorCount
 
-    time.sleep(60)
+    time.sleep(measurementInterval)
 
 #[{"date":"2015-11-25 12:45:11", "value":"55"}]
