@@ -9,7 +9,7 @@ measurementInterval = 60*5 #seconds
 url = 'http://tempread.netai.net/temp/set.php?json='
 
 errorCount = 0
-
+alarmRaisedInARowCount = 0
 #check the serial number of the attached sensor
 call(["touch", "/home/pi/devicenames.txt"])
 deviceNamesFile = open("/home/pi/devicenames.txt", "w")
@@ -42,7 +42,11 @@ while 1:
     if temperature < alarmingLevel:
         print 'Alarming level'
         print tempAsString
-        call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
+        if (alarmRaisedInARowCount % 10) == 0:
+            call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
+        alarmRaisedInARowCount += 1
+    else:
+        alarmRaisedInARowCount = 0
 
     date = time.strftime("%Y-%m-%d")
     hours = time.strftime("%H")
