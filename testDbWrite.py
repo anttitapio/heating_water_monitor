@@ -37,7 +37,6 @@ while 1:
     temperature = (temperature / 1000) + correctionLevel
 
     tempAsString = "%2.1f" % temperature
-    print tempAsString
 
     if temperature < alarmingLevel:
         print 'Alarming level'
@@ -52,6 +51,8 @@ while 1:
     hours = time.strftime("%H")
     minutes = time.strftime("%M")
     seconds = time.strftime("%S")
+
+    print tempAsString + ' ' + date + ' ' + hours + ':' + minutes + ':' + seconds
 
     encodedJson = '%5B%7B%22date%22%3A%22' + date + '+' + hours + '%3A' + minutes + '%3A' + seconds + '%22%2C+%22value%22%3A%22' + tempAsString + '%22%7D%5D'
     fullUrl = url + encodedJson
