@@ -5,7 +5,7 @@ from subprocess import call
 
 correctionLevel = 7.0 # align to analog meter
 alarmingLevel = 65.0
-measurementInterval = 60*5 #seconds
+measurementInterval = 5 * 60 #seconds
 url = 'http://tempread.netai.net/temp/set.php?json='
 
 errorCount = 0
@@ -25,6 +25,7 @@ pathToSensorData = deviceDirectory.rstrip() + "/w1_slave"
 call(["rm", "-f", "/home/pi/devicenames.txt"])
 
 while 1:
+    logFile = open("/home/pi/tempRead.log", "a")
     tfile = open(pathToSensorData)
     text = tfile.read()
     tfile.close()
@@ -52,16 +53,19 @@ while 1:
     minutes = time.strftime("%M")
     seconds = time.strftime("%S")
 
-    print tempAsString + ' ' + date + ' ' + hours + ':' + minutes + ':' + seconds
-
+    output = tempAsString + ' ' + date + ' ' + hours + ':' + minutes + ':' + seconds + '\n'
+    logFile.write(output)
+    print output
     encodedJson = '%5B%7B%22date%22%3A%22' + date + '+' + hours + '%3A' + minutes + '%3A' + seconds + '%22%2C+%22value%22%3A%22' + tempAsString + '%22%7D%5D'
     fullUrl = url + encodedJson
     try:
         urllib2.urlopen(fullUrl).read();
     except Exception:
         errorCount = errorCount + 1
-        print "Server error while connecting. Happened %d times since service start." % errorCount
-
+        errorLine = "Server error while connecting. Happened %d times since service start.\n" % errorCount
+        logFile.write(errorLine)
+        print errorLine
+    logFile.close()
     time.sleep(measurementInterval)
 
 #[{"date":"2015-11-25 12:45:11", "value":"55"}]
