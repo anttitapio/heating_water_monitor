@@ -7,6 +7,7 @@ correctionLevel = 7.0 # align to analog meter
 alarmingLevel = 65.0
 measurementInterval = 5 * 60 #seconds
 url = 'http://tempread.netai.net/temp/set.php?json='
+httpTimeoutValueSeconds = 30
 
 errorCount = 0
 alarmRaisedInARowCount = 0
@@ -59,7 +60,7 @@ while 1:
     encodedJson = '%5B%7B%22date%22%3A%22' + date + '+' + hours + '%3A' + minutes + '%3A' + seconds + '%22%2C+%22value%22%3A%22' + tempAsString + '%22%7D%5D'
     fullUrl = url + encodedJson
     try:
-        urllib2.urlopen(fullUrl).read();
+        urllib2.urlopen(fullUrl, timeout=httpTimeoutValueSeconds).read();
     except Exception:
         errorCount = errorCount + 1
         errorLine = "Server error while connecting. Happened %d times since service start.\n" % errorCount
