@@ -1,14 +1,14 @@
 import json
 import boto3 # for aws db
 import urllib2
+import datetime
 import time
 from subprocess import call
 
 SENSOR_CORRECTION_CONSTANT = 7.0 # align to analog meter
 ALARMING_LEVEL = 65.0
-MEASUREMENT_INTERVAL = 5 #seconds
+MEASUREMENT_INTERVAL =  5 * 60 #seconds
 DB_ADD_URL = "https://dynamodb.us-west-2.amazonaws.com"
-HTTP_TIMEOUT_SECONDS = 30
 
 consecutiveAlarms = 0
 
@@ -45,10 +45,7 @@ def read_temp():
     return (temperature / 1000) + SENSOR_CORRECTION_CONSTANT
 
 def get_date_and_time():
-    date = time.strftime("%Y-%m-%d")
-    hours = time.strftime("%H")
-    minutes = time.strftime("%M")
-    seconds = time.strftime("%S")
+    return datetime.datetime.now().isoformat()
 
     return date + ' ' + hours + ':' + minutes + ':' + seconds
 
@@ -64,12 +61,12 @@ def raise_alarm():
     else:
         consecutiveAlarms = 0
 
-def upload_result_to_db(date, temp):
+def upload_result_to_db(timestamp, temp):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=DB_ADD_URL)
     table = dynamodb.Table('tempLog')
     response = table.put_item(
         Item={
-            'Time' : date,
+            'Time' : timestamp,
             'Temperature' : temp
             }
     )
