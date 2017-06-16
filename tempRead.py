@@ -47,13 +47,6 @@ def read_temp():
 def get_date_and_time():
     return datetime.datetime.now().isoformat()
 
-    return date + ' ' + hours + ':' + minutes + ':' + seconds
-
-def get_json_string(time, temperature):
-        encodedJson = '%5B%7B%22date%22%3A%22' + time('date') + '+' + \
-            time('hours') + '%3A' + time('minutes') + '%3A' + time('seconds') + \
-            '%22%2C+%22value%22%3A%22' + temperature + '%22%7D%5D'
-
 def raise_alarm():
     if (consecutiveAlarms % 10) == 0:
         call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
@@ -74,14 +67,11 @@ def upload_result_to_db(timestamp, temp):
 
 def main_loop():
     while True:
-        #TIME!
         logFile = open("/home/pi/tempRead.log", "a")
         temperature = read_temp()
         tempAsString = "%2.1f" % temperature
 
         if temperature < ALARMING_LEVEL:
-            print 'Alarming level'
-            print tempAsString
             raise_alarm()
 
         log_entry = get_date_and_time() + ' ' + tempAsString + '\n'
