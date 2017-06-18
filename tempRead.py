@@ -47,7 +47,8 @@ def read_temp():
 def get_date_and_time():
     return datetime.datetime.now().isoformat()
 
-def raise_alarm():
+def raise_alarm(tempAsString):
+    global consecutiveAlarms
     if (consecutiveAlarms % 10) == 0:
         call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
         consecutiveAlarms += 1
@@ -72,7 +73,7 @@ def main_loop():
         tempAsString = "%2.1f" % temperature
 
         if temperature < ALARMING_LEVEL:
-            raise_alarm()
+            raise_alarm(tempAsString)
 
         log_entry = get_date_and_time() + ' ' + tempAsString + '\n'
         logFile.write(log_entry)
