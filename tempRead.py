@@ -51,9 +51,9 @@ def raise_alarm(tempAsString):
     global consecutiveAlarms
     if (consecutiveAlarms % 10) == 0:
         call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
-        consecutiveAlarms += 1
-    else:
         consecutiveAlarms = 0
+    else:
+        consecutiveAlarms += 1
 
 def upload_result_to_db(timestamp, temp):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=DB_ADD_URL)
