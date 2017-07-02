@@ -10,7 +10,6 @@ ALARMING_LEVEL = 65.0
 MEASUREMENT_INTERVAL =  5 * 60 #seconds
 DB_ADD_URL = "https://dynamodb.us-west-2.amazonaws.com"
 
-consecutiveAlarms = 0
 
 def init_sensor():
     #Check the serial number of the attached sensor
@@ -47,13 +46,8 @@ def read_temp():
 def get_date_and_time():
     return datetime.datetime.now().isoformat()
 
-def raise_alarm(tempAsString):
-    global consecutiveAlarms
-    if (consecutiveAlarms % 10) == 0:
-        call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
-        consecutiveAlarms = 0
-    else:
-        consecutiveAlarms += 1
+def send_mail(tempAsString):
+    call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
 
 def upload_result_to_db(timestamp, temp):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=DB_ADD_URL)
@@ -67,13 +61,18 @@ def upload_result_to_db(timestamp, temp):
     print(json.dumps(response, indent=4))
 
 def main_loop():
+    consecutiveAlarms = 0
     while True:
         logFile = open("/home/pi/tempRead.log", "a")
         temperature = read_temp()
         tempAsString = "%2.1f" % temperature
 
         if temperature < ALARMING_LEVEL:
-            raise_alarm(tempAsString)
+            if (consecutiveAlarms % 10) == 0:
+                send_mail(tempAsString)
+            consecutiveAlarms += 1
+        else:
+            consecutiveAlarms = 0
 
         log_entry = get_date_and_time() + ' ' + tempAsString + '\n'
         logFile.write(log_entry)
