@@ -51,11 +51,12 @@ def send_mail(tempAsString):
 
 def upload_result_to_db(timestamp, temp):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=DB_ADD_URL)
-    table = dynamodb.Table('tempLog')
+    table = dynamodb.Table('temperature_data')
     response = table.put_item(
         Item={
-            'Time' : timestamp,
-            'Temperature' : temp
+            'sensor_location' : 'incoming_heating',
+            'timestamp' : timestamp,
+            'temperature' : temp
             }
     )
     print(json.dumps(response, indent=4))
