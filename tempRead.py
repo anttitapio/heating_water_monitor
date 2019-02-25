@@ -60,14 +60,18 @@ def send_mail(tempAsString):
 def upload_result_to_db(timestamp, temp):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=DB_ADD_URL)
     table = dynamodb.Table('temperature_data')
-    response = table.put_item(
-        Item={
-            'sensor_location' : 'incoming_heating',
-            'timestamp' : timestamp,
-            'temperature' : temp
-            }
-    )
-    log("DB upload response: " + json.dumps(response, indent = 4))
+    try:
+        response = table.put_item(
+            Item={
+                'sensor_location' : 'incoming_heating',
+                'timestamp' : timestamp,
+                'temperature' : temp
+                }
+        )
+    except Exception as e:
+        log("DB ERROR: {}".format(e))
+    else:
+        log("DB upload OK")
 
 
 def log(log_entry, log_file = APP_LOG_FILE):
