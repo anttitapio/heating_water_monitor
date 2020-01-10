@@ -1,36 +1,51 @@
+#!/usr/bin/env python3
+
 import json
-import boto3 # for aws db
-import urllib2
 import datetime
 import time
+import os
+import yagmail
 from subprocess import call
+from systemd import journal
 
 SENSOR_CORRECTION_CONSTANT = 7.0 # align to analog meter
 ALARMING_LEVEL = 65.0
 MEASUREMENT_INTERVAL =  5 * 60 #seconds
-DB_ADD_URL = "https://dynamodb.us-west-2.amazonaws.com"
-TEMP_LOG_FILE = "/home/pi/tempRead.log"
-APP_LOG_FILE = "/home/pi/application.log"
-
+OWN_DIR = os.path.dirname(os.path.realpath(__file__))
+TEMP_LOG_FILE = OWN_DIR + "/tempRead.log"
+APP_LOG_FILE = OWN_DIR + "/application.log"
+MAIL_USER = os.environ['GM_USER']
+MAIL_PASS = os.environ['GM_PASS']
+MAIL_HEADER = 'Kattila sammunut: t='
+MAIL_RECEIVER_FILE = OWN_DIR + "/mail_recipients.txt"
+yag = yagmail.SMTP(MAIL_USER, MAIL_PASS)
 
 def init_sensor():
     #Check the serial number of the attached sensor
     #TODO if sensor not attached
     #TODO multiple sensors
-    call(["touch", "/home/pi/devicenames.txt"])
-    deviceNamesFile = open("/home/pi/devicenames.txt", "w")
+    call(["touch", OWN_DIR + "/devicenames.txt"])
+    deviceNamesFile = open(OWN_DIR + "/devicenames.txt", "w")
     call(["find", "/sys/bus/w1/devices", "-name", "28-*"],
          stdout=deviceNamesFile)
     deviceNamesFile.close()
 
-    deviceNamesFile = open("/home/pi/devicenames.txt")
+    deviceNamesFile = open(OWN_DIR + "/devicenames.txt")
     deviceDirectory = deviceNamesFile.read()
     deviceNamesFile.close()
-    call(["rm", "-f", "/home/pi/devicenames.txt"])
+    call(["rm", "-f", OWN_DIR + "/devicenames.txt"])
     log("Device initialized at " + get_date_and_time())
     log("Measurements will be read from " + deviceDirectory.rstrip() + "/w1_slave")
 
     return deviceDirectory.rstrip() + "/w1_slave"
+
+
+def read_mail_recipients_from_file():
+    recipients = []
+    with open (MAIL_RECEIVER_FILE, "r") as fileHandler:
+        for line in fileHandler:
+            recipients.append(line.strip())
+    return recipients
 
 
 def read_temp():
@@ -54,31 +69,22 @@ def get_date_and_time():
 
 
 def send_mail(tempAsString):
-    call(["/home/pi/heating_water_monitor/mail-script.sh", tempAsString])
-
-
-def upload_result_to_db(timestamp, temp):
-    dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=DB_ADD_URL)
-    table = dynamodb.Table('temperature_data')
-    try:
-        response = table.put_item(
-            Item={
-                'sensor_location' : 'incoming_heating',
-                'timestamp' : timestamp,
-                'temperature' : temp
-                }
-        )
-    except Exception as e:
-        log("DB ERROR: {}".format(e))
-    else:
-        log("DB upload OK")
+    recipients = read_mail_recipients_from_file()
+    for recipient in recipients:
+        try:
+            yag.send(recipient, MAIL_HEADER + tempAsString, 'empty')
+        except Exception as e:
+            log("Error in sending mail: " + str(e))
+        else:    
+            log("Mail sent to " + recipient + ": " + tempAsString)
 
 
 def log(log_entry, log_file = APP_LOG_FILE):
     logFile = open(log_file, "a")
-    log_entry = get_date_and_time() + ': ' + log_entry + '\n'
-    logFile.write(log_entry)
+    logfile_entry = get_date_and_time() + ': ' + log_entry + '\n'
+    logFile.write(logfile_entry)
     logFile.close()
+    journal.write(log_entry)
 
 
 def main_loop():
@@ -91,7 +97,6 @@ def main_loop():
             if (consecutiveAlarms % 10) == 0:
                 log("Low temperature read (" + tempAsString + "), sending mail")
                 send_mail(tempAsString)
-                log("Mail sent: " + tempAsString)
                 consecutiveAlarms = 0
             else:
                 log("Temp value still low, waiting " + str(10 - consecutiveAlarms) \
@@ -100,8 +105,6 @@ def main_loop():
         else:
             log("Normal temperature read (" + tempAsString + ")")
             consecutiveAlarms = 0
-
-        upload_result_to_db(get_date_and_time(), tempAsString)
 
         time.sleep(MEASUREMENT_INTERVAL)
 
