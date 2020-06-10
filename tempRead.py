@@ -9,7 +9,7 @@ from subprocess import call
 from systemd import journal
 
 SENSOR_CORRECTION_CONSTANT = 7.0 # align to analog meter
-ALARMING_LEVEL = 65.0
+ALARMING_LEVEL = 72.0
 MEASUREMENT_INTERVAL =  5 * 60 #seconds
 OWN_DIR = os.path.dirname(os.path.realpath(__file__))
 TEMP_LOG_FILE = OWN_DIR + "/tempRead.log"
@@ -103,7 +103,6 @@ def main_loop():
                     + " rounds before sending a new mail")
             consecutiveAlarms = consecutiveAlarms + 1
         else:
-            log("Normal temperature read (" + tempAsString + ")")
             consecutiveAlarms = 0
 
         time.sleep(MEASUREMENT_INTERVAL)
